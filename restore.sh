@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Spielt ein mit backup.sh erstelltes Hyprland/Noctalia-Backup wieder ein.
-# Aufruf: ./restore.sh [backup-verzeichnis]   (Default: ~/hypr-noctalia-backup)
+# Aufruf: ./restore.sh
+# Das Archiv wird immer aus dem Ordner dieses Skripts (dem Repo) gelesen.
 set -euo pipefail
 
-SRC="${1:-$HOME/hypr-noctalia-backup}"
+SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ARCHIVE="$SRC/hypr-noctalia-config.tar.gz"
 
 if [ ! -f "$ARCHIVE" ]; then

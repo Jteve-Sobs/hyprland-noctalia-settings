@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Sichert Hyprland- und Noctalia-Konfiguration.
-# Aufruf: ./backup.sh [zielverzeichnis]   (Default: ~/hypr-noctalia-backup)
+# Aufruf: ./backup.sh
+# Das Archiv wird immer im Ordner dieses Skripts (dem Repo) abgelegt.
 set -euo pipefail
 
-DEST="${1:-$HOME/hypr-noctalia-backup}"
-mkdir -p "$DEST"
+DEST="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "==> Sichere Hyprland- und Noctalia-Konfiguration nach $DEST"
 

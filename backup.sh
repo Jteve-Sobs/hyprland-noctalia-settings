@@ -27,6 +27,30 @@ for p in "${CONFIG_PATHS[@]}"; do
     [ -e "$HOME/$p" ] && EXISTING+=("$p")
 done
 
+# Noctalia speichert in settings.toml nur den Pfad zum Hintergrundbild --
+# die Bilddateien selbst muessen daher separat mitgesichert werden.
+SETTINGS="$HOME/.local/state/noctalia/settings.toml"
+if [ -f "$SETTINGS" ]; then
+    while IFS= read -r wp; do
+        [ -z "$wp" ] && continue
+        wp="${wp/#\~/$HOME}"
+        if [ ! -f "$wp" ]; then
+            echo "    Warnung: Hintergrundbild $wp nicht gefunden, uebersprungen." >&2
+            continue
+        fi
+        case "$wp" in
+            "$HOME"/*) rel="${wp#"$HOME"/}" ;;
+            *) echo "    Warnung: $wp liegt ausserhalb von $HOME, uebersprungen." >&2; continue ;;
+        esac
+        # Doppelte Eintraege (default/last/monitors) nur einmal aufnehmen
+        [[ " ${EXISTING[*]} " == *" $rel "* ]] || EXISTING+=("$rel")
+    done < <(awk '
+        /^\[/ { in_wp = ($0 ~ /^\[wallpaper(\.|\])/) }
+        in_wp && /^[[:space:]]*path[[:space:]]*=/ {
+            sub(/^[^=]*=[[:space:]]*"/, ""); sub(/"[[:space:]]*$/, ""); print
+        }' "$SETTINGS")
+fi
+
 if [ "${#EXISTING[@]}" -eq 0 ]; then
     echo "Keine der erwarteten Pfade gefunden, breche ab." >&2
     exit 1

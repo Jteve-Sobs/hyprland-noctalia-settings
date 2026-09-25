@@ -27,27 +27,48 @@ for p in "${CONFIG_PATHS[@]}"; do
     [ -e "$HOME/$p" ] && EXISTING+=("$p")
 done
 
-# Noctalia speichert in settings.toml nur den Pfad zum Hintergrundbild --
-# die Bilddateien selbst muessen daher separat mitgesichert werden.
+# Noctalia speichert in settings.toml nur Pfade zu den Hintergrundbildern --
+# die Bilddateien selbst muessen daher separat mitgesichert werden. Gesichert
+# wird der komplette Rotationsordner (wallpaper.directory) plus alle einzeln
+# gesetzten Bilder (default/last/monitors), sofern sie nicht darin liegen.
 SETTINGS="$HOME/.local/state/noctalia/settings.toml"
+WP_DIRS=()
 if [ -f "$SETTINGS" ]; then
-    while IFS= read -r wp; do
+    while IFS=$'\t' read -r kind wp; do
         [ -z "$wp" ] && continue
         wp="${wp/#\~/$HOME}"
-        if [ ! -f "$wp" ]; then
-            echo "    Warnung: Hintergrundbild $wp nicht gefunden, uebersprungen." >&2
-            continue
+        wp="${wp%/}"
+        if [ "$kind" = dir ]; then
+            label="Hintergrundbild-Ordner"
+            [ -d "$wp" ] || { echo "    Warnung: $label $wp nicht gefunden, uebersprungen." >&2; continue; }
+        else
+            label="Hintergrundbild"
+            [ -f "$wp" ] || { echo "    Warnung: $label $wp nicht gefunden, uebersprungen." >&2; continue; }
+            # Liegt das Bild im bereits gesicherten Ordner, nicht doppelt aufnehmen
+            for d in "${WP_DIRS[@]}"; do
+                [[ "$wp" == "$d"/* ]] && continue 2
+            done
         fi
         case "$wp" in
             "$HOME"/*) rel="${wp#"$HOME"/}" ;;
-            *) echo "    Warnung: $wp liegt ausserhalb von $HOME, uebersprungen." >&2; continue ;;
+            *) echo "    Warnung: $label $wp liegt ausserhalb von $HOME, uebersprungen." >&2; continue ;;
         esac
-        # Doppelte Eintraege (default/last/monitors) nur einmal aufnehmen
-        [[ " ${EXISTING[*]} " == *" $rel "* ]] || EXISTING+=("$rel")
+        [ "$kind" = dir ] && WP_DIRS+=("$wp")
+        EXISTING+=("$rel")
+    # awk gibt erst die Ordner, dann die Einzelbilder aus und entfernt
+    # Doppelte (default/last/monitors), damit Warnungen nur einmal erscheinen.
+    # Noctalia rueckt Untertabellen ein, daher Whitespace vor "[" erlauben.
     done < <(awk '
-        /^\[/ { in_wp = ($0 ~ /^\[wallpaper(\.|\])/) }
-        in_wp && /^[[:space:]]*path[[:space:]]*=/ {
-            sub(/^[^=]*=[[:space:]]*"/, ""); sub(/"[[:space:]]*$/, ""); print
+        /^[[:space:]]*\[/ { in_wp = ($0 ~ /^[[:space:]]*\[wallpaper(\.|\])/) }
+        in_wp && /^[[:space:]]*(directory|path)[[:space:]]*=/ {
+            key = ($0 ~ /^[[:space:]]*directory/) ? "dir" : "file"
+            sub(/^[^=]*=[[:space:]]*"/, ""); sub(/"[[:space:]]*$/, "")
+            if (seen[key, $0]++) next
+            if (key == "dir") dirs[++nd] = $0; else files[++nf] = $0
+        }
+        END {
+            for (i = 1; i <= nd; i++) print "dir\t" dirs[i]
+            for (i = 1; i <= nf; i++) print "file\t" files[i]
         }' "$SETTINGS")
 fi
 

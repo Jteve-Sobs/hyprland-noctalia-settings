@@ -119,6 +119,34 @@ if [ -s "$SRC/pkglist-repo.txt" ] || [ -s "$SRC/pkglist-aur.txt" ]; then
     ask "Fehlende Pakete aus den Paketlisten installieren?" && install_pkgs
 fi
 
+# Monitor-Layout (Ausgangsnamen, Positionen, Drehung) passt nur auf dieselbe
+# Hardware. Ohne Wiederherstellung bleibt eine vorhandene monitors.lua
+# unangetastet; fehlt sie, wird eine neutrale Standardregel angelegt, weil
+# hyprland.lua sie per require() laedt.
+MONITORS=".config/hypr/config/monitors.lua"
+RESTORE_MONITORS=0
+if tar -tzf "$ARCHIVE" "$MONITORS" >/dev/null 2>&1; then
+    # Inhalt zeigen, damit man vor der Entscheidung sieht, welche Ausgaenge,
+    # Positionen und Drehungen das Backup setzt -- nur bei Rueckfrage sinnvoll.
+    if [ -t 0 ]; then
+        echo "==> Gesicherte $MONITORS:"
+        echo "------------------------------------------------------------"
+        tar -xzOf "$ARCHIVE" "$MONITORS"
+        echo "------------------------------------------------------------"
+        # Zum Vergleich die Ausgaenge dieses Rechners (nur in laufendem Hyprland)
+        if command -v hyprctl >/dev/null && hyprctl monitors all >/dev/null 2>&1; then
+            echo "    Ausgaenge an diesem Rechner:"
+            hyprctl monitors all | awk '
+                /^Monitor /     { name = $2 }
+                /description:/  { sub(/^[[:space:]]*description:[[:space:]]*/, ""); print "      " name "  (" $0 ")" }'
+        fi
+    fi
+    ask "Monitor-Konfiguration wiederherstellen? (nur bei gleichen Monitoren/Anschluessen sinnvoll)" \
+        && RESTORE_MONITORS=1
+fi
+TAR_EXCLUDE=()
+[ "$RESTORE_MONITORS" -eq 1 ] || TAR_EXCLUDE=(--exclude="$MONITORS")
+
 # Sicherheitsnetz: jede Datei, die das Archiv ueberschreiben wuerde, vorher
 # wegsichern, damit ein Restore nichts unwiderruflich zerstoert. Die Liste
 # kommt direkt aus dem Archiv und passt damit immer zu backup.sh.
@@ -126,6 +154,7 @@ SAFETY="$HOME/hypr-noctalia-backup-vor-restore-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$SAFETY"
 while IFS= read -r p; do
     case "$p" in */) continue ;; esac
+    [ "$RESTORE_MONITORS" -eq 1 ] || [ "$p" != "$MONITORS" ] || continue
     if [ -e "$HOME/$p" ]; then
         mkdir -p "$SAFETY/$(dirname "$p")"
         cp -a "$HOME/$p" "$SAFETY/$p"
@@ -137,7 +166,24 @@ fi
 echo "==> Aktueller Stand vorsorglich gesichert nach: $SAFETY"
 
 echo "==> Spiele Hyprland- und Noctalia-Konfiguration ein"
-tar -C "$HOME" -xzf "$ARCHIVE"
+tar -C "$HOME" -xzf "$ARCHIVE" "${TAR_EXCLUDE[@]}"
+
+if [ "$RESTORE_MONITORS" -eq 0 ] && [ ! -e "$HOME/$MONITORS" ]; then
+    cat > "$HOME/$MONITORS" <<'LUA'
+-- Monitor-Konfiguration (beim Restore neutral angelegt)
+-- Alle Monitore mit bevorzugter Aufloesung, automatisch nebeneinander.
+-- Eigene Regeln pro Ausgang ergaenzen, Namen siehe: hyprctl monitors all
+hl.monitor({
+    output   = "",
+    mode     = "preferred",
+    position = "auto",
+    scale    = 1.0,
+})
+LUA
+    echo "    Neutrale monitors.lua angelegt (alle Monitore automatisch)."
+elif [ "$RESTORE_MONITORS" -eq 0 ]; then
+    echo "    Vorhandene monitors.lua beibehalten."
+fi
 
 if [ -f "$SRC/dconf.ini" ]; then
     if ! command -v dconf >/dev/null; then
@@ -165,5 +211,5 @@ fi
 echo "==> Fertig."
 echo "    Hyprland neu laden:      hyprctl reload"
 echo "    Noctalia neu starten, damit die Einstellungen uebernommen werden."
-echo "    Monitore in ~/.config/hypr/config/monitors.lua an die Hardware anpassen."
+[ "$RESTORE_MONITORS" -eq 1 ] && echo "    Monitore in ~/.config/hypr/config/monitors.lua ggf. an die Hardware anpassen."
 echo "    UWSM-Umgebung und neu aktivierte Dienste greifen erst nach Neustart/Login."

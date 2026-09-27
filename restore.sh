@@ -16,7 +16,7 @@ fi
 # ein Restore nichts unwiderruflich zerstoert.
 SAFETY="$HOME/hypr-noctalia-backup-vor-restore-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$SAFETY"
-for p in .config/hypr .config/noctalia .local/state/noctalia/settings.toml .local/state/noctalia/state.toml .config/qt6ct .config/qt5ct; do
+for p in .config/hypr .config/noctalia .local/state/noctalia/settings.toml .local/state/noctalia/state.toml .local/state/noctalia/plugins/data/kenn/keybind-cheatsheet/preferences.json .config/qt6ct .config/qt5ct; do
     if [ -e "$HOME/$p" ]; then
         mkdir -p "$SAFETY/$(dirname "$p")"
         cp -a "$HOME/$p" "$SAFETY/$p"

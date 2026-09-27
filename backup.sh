@@ -18,6 +18,9 @@ CONFIG_PATHS=(
     ".config/noctalia"
     ".local/state/noctalia/settings.toml"
     ".local/state/noctalia/state.toml"
+    # Plugin-Anpassungen des Keybind-Cheatsheets (ausgeblendete Binds, Farben,
+    # eigene Beschreibungen); bindings-cache.json daneben ist regenerierbar.
+    ".local/state/noctalia/plugins/data/kenn/keybind-cheatsheet/preferences.json"
     ".config/qt6ct"
     ".config/qt5ct"
 )

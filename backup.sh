@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Sichert Hyprland- und Noctalia-Konfiguration.
+# Sichert Hyprland- und Noctalia-Konfiguration plus die restliche Desktop-
+# Umgebung (Shell, Terminal, GTK, Standard-Apps, Pakete, Dienste, Flatpaks).
 # Aufruf: ./backup.sh
 # Das Archiv wird immer im Ordner dieses Skripts (dem Repo) abgelegt.
 set -euo pipefail
@@ -18,11 +19,21 @@ CONFIG_PATHS=(
     ".config/noctalia"
     ".local/state/noctalia/settings.toml"
     ".local/state/noctalia/state.toml"
-    # Plugin-Anpassungen des Keybind-Cheatsheets (ausgeblendete Binds, Farben,
-    # eigene Beschreibungen); bindings-cache.json daneben ist regenerierbar.
-    ".local/state/noctalia/plugins/data/kenn/keybind-cheatsheet/preferences.json"
+    # Daten/Anpassungen aller Noctalia-Plugins (z.B. ausgeblendete Binds im
+    # Keybind-Cheatsheet). Der Plugin-Code selbst kommt aus dem Plugin-Repo.
+    ".local/state/noctalia/plugins/data"
+    # UWSM-Umgebung (Cursor-Theme, Qt-Plattformtheme usw.), siehe environment.lua
+    ".config/uwsm"
+    # Von hypr-persist gespeicherte Fensteranordnung (Autostart: restore startup)
+    ".local/share/hypr-persist/sessions"
     ".config/qt6ct"
     ".config/qt5ct"
+    # Restliche Desktop-Umgebung
+    ".config/fish"
+    ".config/kitty"
+    ".config/gtk-3.0"
+    ".config/gtk-4.0"
+    ".config/mimeapps.list"
 )
 
 EXISTING=()
@@ -82,8 +93,37 @@ fi
 
 tar -C "$HOME" -czf "$DEST/hypr-noctalia-config.tar.gz" "${EXISTING[@]}"
 
+# Paketliste fuer ein neues System: explizit installierte Pakete, getrennt
+# nach Repo-Paketen (pacman) und AUR/Fremdpaketen (AUR-Helper).
+pacman -Qqen > "$DEST/pkglist-repo.txt"
+pacman -Qqem > "$DEST/pkglist-aur.txt"
+
+# GTK/GNOME-Einstellungen (Theme, Icons, Schriften, Nautilus usw.). Die
+# Binaerdatei ~/.config/dconf/user ist nicht portabel, daher als Text-Dump.
+if command -v dconf >/dev/null; then
+    dconf dump / > "$DEST/dconf.ini"
+fi
+
+# Aktivierte systemd-Units (System und Benutzer). Template-Units (getty@.service
+# usw.) werden ausgelassen, die lassen sich nicht ohne Instanz aktivieren.
+systemctl list-unit-files --state=enabled --no-legend \
+    | awk '$1 !~ /@\./ {print $1}' > "$DEST/services-system.txt"
+systemctl --user list-unit-files --state=enabled --no-legend \
+    | awk '$1 !~ /@\./ {print $1}' > "$DEST/services-user.txt"
+
+# Flatpak-Apps als "App-ID<TAB>Remote<TAB>Installation (system/user)"
+if command -v flatpak >/dev/null; then
+    flatpak list --app --columns=application,origin,installation > "$DEST/flatpaks.txt"
+fi
+
 echo "==> Fertig. Backup liegt in: $DEST"
 echo "    - hypr-noctalia-config.tar.gz  (${#EXISTING[@]} Pfade gesichert, $(date '+%d.%m.%Y %H:%M'))"
 for p in "${EXISTING[@]}"; do
     echo "        * $p"
 done
+echo "    - pkglist-repo.txt  ($(wc -l < "$DEST/pkglist-repo.txt") Pakete)"
+echo "    - pkglist-aur.txt   ($(wc -l < "$DEST/pkglist-aur.txt") Pakete)"
+[ -f "$DEST/dconf.ini" ] && echo "    - dconf.ini         ($(grep -c '^\[' "$DEST/dconf.ini") Bereiche)"
+echo "    - services-system.txt ($(wc -l < "$DEST/services-system.txt") Units)"
+echo "    - services-user.txt   ($(wc -l < "$DEST/services-user.txt") Units)"
+[ -f "$DEST/flatpaks.txt" ] && echo "    - flatpaks.txt      ($(wc -l < "$DEST/flatpaks.txt") Apps)"

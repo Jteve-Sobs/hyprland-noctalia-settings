@@ -1,0 +1,6 @@
+bibata-cursor-theme-bin
+dropbox
+hypr-persist
+makemkv
+regionset
+rustdesk-bin

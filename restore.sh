@@ -165,6 +165,19 @@ if [ -f "$SRC/dconf.ini" ] && command -v dconf >/dev/null; then
 fi
 echo "==> Aktueller Stand vorsorglich gesichert nach: $SAFETY"
 
+# Hyprland laedt die Config bei jeder Dateiaenderung automatisch neu. tar
+# schreibt die Dateien nacheinander -- ein Reload mitten im Entpacken sieht
+# eine halb eingespielte Config, scheitert und schaltet auf die Notfall-
+# Keybinds. Daher Autoreload waehrend des Einspielens aus und danach genau
+# einmal gezielt neu laden. Der trap schaltet ihn auch bei Abbruch wieder ein.
+HYPR_LIVE=0
+if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && command -v hyprctl >/dev/null \
+    && hyprctl eval 'hl.config({ misc = { disable_autoreload = true } })' >/dev/null 2>&1; then
+    HYPR_LIVE=1
+    trap 'hyprctl eval "hl.config({ misc = { disable_autoreload = false } })" >/dev/null 2>&1 || true' EXIT
+    echo "    Hyprland-Autoreload waehrend des Einspielens pausiert."
+fi
+
 echo "==> Spiele Hyprland- und Noctalia-Konfiguration ein"
 tar -C "$HOME" -xzf "$ARCHIVE" "${TAR_EXCLUDE[@]}"
 
@@ -183,6 +196,19 @@ LUA
     echo "    Neutrale monitors.lua angelegt (alle Monitore automatisch)."
 elif [ "$RESTORE_MONITORS" -eq 0 ]; then
     echo "    Vorhandene monitors.lua beibehalten."
+fi
+
+if [ "$HYPR_LIVE" -eq 1 ]; then
+    hyprctl reload >/dev/null
+    hyprctl eval 'hl.config({ misc = { disable_autoreload = false } })' >/dev/null 2>&1 || true
+    trap - EXIT
+    ERRS=$(hyprctl configerrors 2>/dev/null | grep -v '^[[:space:]]*$' || true)
+    if [ -n "$ERRS" ]; then
+        echo "    Warnung: Hyprland meldet Config-Fehler:" >&2
+        echo "$ERRS" | sed 's/^/      /' >&2
+    else
+        echo "==> Hyprland-Config neu geladen, keine Fehler"
+    fi
 fi
 
 if [ -f "$SRC/dconf.ini" ]; then
@@ -209,7 +235,7 @@ if [ -s "$SRC/services-system.txt" ] || [ -s "$SRC/services-user.txt" ]; then
 fi
 
 echo "==> Fertig."
-echo "    Hyprland neu laden:      hyprctl reload"
+[ "$HYPR_LIVE" -eq 1 ] || echo "    Hyprland neu laden:      hyprctl reload"
 echo "    Noctalia neu starten, damit die Einstellungen uebernommen werden."
 [ "$RESTORE_MONITORS" -eq 1 ] && echo "    Monitore in ~/.config/hypr/config/monitors.lua ggf. an die Hardware anpassen."
 echo "    UWSM-Umgebung und neu aktivierte Dienste greifen erst nach Neustart/Login."

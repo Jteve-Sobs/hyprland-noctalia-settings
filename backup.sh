@@ -34,6 +34,14 @@ CONFIG_PATHS=(
     ".config/gtk-3.0"
     ".config/gtk-4.0"
     ".config/mimeapps.list"
+    # KDE-Cursor/Touchpad. KDE synchronisiert seinen Cursor nach GTK/dconf --
+    # ohne Eintrag hier ueberschreibt es Bibata mit dem Default breeze_cursors.
+    ".config/kcminputrc"
+    # hyfetch (Terminal-Begruessung der CachyOS-fish-Config); Backend ist
+    # fastfetch, das ohne eigene Config laeuft -- falls doch eine angelegt
+    # wird, kommt sie automatisch mit.
+    ".config/hyfetch.json"
+    ".config/fastfetch"
 )
 
 EXISTING=()

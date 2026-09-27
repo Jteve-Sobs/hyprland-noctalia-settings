@@ -37,6 +37,8 @@ CONFIG_PATHS=(
     # KDE-Cursor/Touchpad. KDE synchronisiert seinen Cursor nach GTK/dconf --
     # ohne Eintrag hier ueberschreibt es Bibata mit dem Default breeze_cursors.
     ".config/kcminputrc"
+    # Standard-Cursor fuer Apps, die kein Theme gesetzt bekommen (XWayland usw.)
+    ".local/share/icons/default/index.theme"
     # hyfetch (Terminal-Begruessung der CachyOS-fish-Config); Backend ist
     # fastfetch, das ohne eigene Config laeuft -- falls doch eine angelegt
     # wird, kommt sie automatisch mit.

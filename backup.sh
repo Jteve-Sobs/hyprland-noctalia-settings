@@ -39,6 +39,9 @@ CONFIG_PATHS=(
     ".config/kcminputrc"
     # Standard-Cursor fuer Apps, die kein Theme gesetzt bekommen (XWayland usw.)
     ".local/share/icons/default/index.theme"
+    # MakeMKV ist eine Qt5-App: QT_QPA_PLATFORMTHEME=qt6ct greift dort nicht,
+    # daher Starter mit qt5ct (Farben kommen von Noctalia nach ~/.config/qt5ct)
+    ".local/share/applications/makemkv.desktop"
     # hyfetch (Terminal-Begruessung der CachyOS-fish-Config); Backend ist
     # fastfetch, das ohne eigene Config laeuft -- falls doch eine angelegt
     # wird, kommt sie automatisch mit.

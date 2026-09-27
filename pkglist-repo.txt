@@ -217,6 +217,7 @@ python
 python-defusedxml
 python-packaging
 python-pip
+qt5ct
 qt6ct
 qview
 realtime-privileges

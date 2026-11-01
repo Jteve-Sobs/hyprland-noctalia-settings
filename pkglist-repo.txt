@@ -68,6 +68,7 @@ e2fsprogs
 efibootmgr
 efitools
 ethtool
+euro-office-bin
 evtest
 exfatprogs
 f2fs-tools
@@ -260,6 +261,7 @@ unzip
 upower
 usb_modeswitch
 usbutils
+uv
 uwsm
 vim
 virt-viewer

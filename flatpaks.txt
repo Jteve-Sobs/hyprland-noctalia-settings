@@ -1,1 +1,2 @@
+ai.storyteller.pdfcraft	pdfcraft-origin	user
 org.gnome.NetworkDisplays	flathub	system

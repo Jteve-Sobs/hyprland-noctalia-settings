@@ -30,7 +30,11 @@ CONFIG_PATHS=(
     ".config/qt5ct"
     # Restliche Desktop-Umgebung
     ".config/fish"
+    ".config/alacritty"
     ".config/kitty"
+    # Standard-Terminal fuer xdg-terminal-exec (u.a. arch-update-Tray, gio,
+    # .desktop-Dateien mit Terminal=true)
+    ".config/xdg-terminals.list"
     ".config/gtk-3.0"
     ".config/gtk-4.0"
     ".config/mimeapps.list"

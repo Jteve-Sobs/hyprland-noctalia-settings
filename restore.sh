@@ -14,11 +14,19 @@ if [ ! -f "$ARCHIVE" ]; then
 fi
 
 # Ja/Nein-Rueckfrage; ohne Terminal (z.B. per Pipe) immer "nein".
+# ask        -> Standard nein [j/N], Enter ueberspringt
+# ask_yes    -> Standard ja   [J/n], Enter fuehrt aus
 ask() {
     [ -t 0 ] || return 1
     local answer
     read -rp "==> $1 [j/N] " answer
     case "$answer" in [jJyY]*) return 0 ;; *) echo "    Uebersprungen."; return 1 ;; esac
+}
+ask_yes() {
+    [ -t 0 ] || return 1
+    local answer
+    read -rp "==> $1 [J/n] " answer
+    case "$answer" in [nN]*) echo "    Uebersprungen."; return 1 ;; *) return 0 ;; esac
 }
 
 # Fehlende Pakete aus den Paketlisten nachinstallieren. Vor dem Einspielen
@@ -129,15 +137,16 @@ enable_units() {
 # oder kaputte Mirrors oben (404 auf .sig-Dateien), dann scheitert jede
 # Paketinstallation.
 if command -v cachyos-rate-mirrors >/dev/null; then
-    echo "==> Bewerte Mirrors neu (cachyos-rate-mirrors)"
-    sudo cachyos-rate-mirrors \
-        || echo "    Warnung: cachyos-rate-mirrors fehlgeschlagen, fahre mit bestehenden Mirrors fort." >&2
+    if ask_yes "Paket-Mirrors neu bewerten (cachyos-rate-mirrors, dauert ca. 1 Minute)?"; then
+        sudo cachyos-rate-mirrors \
+            || echo "    Warnung: cachyos-rate-mirrors fehlgeschlagen, fahre mit bestehenden Mirrors fort." >&2
+    fi
 else
     echo "    cachyos-rate-mirrors nicht gefunden, Mirrors bleiben unveraendert."
 fi
 
 if [ -s "$SRC/pkglist-repo.txt" ] || [ -s "$SRC/pkglist-aur.txt" ]; then
-    ask "Fehlende Pakete aus den Paketlisten installieren?" && install_pkgs
+    ask_yes "System aktualisieren und fehlende Pakete aus den Paketlisten installieren?" && install_pkgs
 fi
 
 # Monitor-Layout (Ausgangsnamen, Positionen, Drehung) passt nur auf dieselbe
@@ -230,6 +239,21 @@ if [ "$HYPR_LIVE" -eq 1 ]; then
     else
         echo "==> Hyprland-Config neu geladen, keine Fehler"
     fi
+fi
+
+# Cursor-Theme pruefen: Die Config verweist nur auf den Namen, das Theme selbst
+# kommt aus dem AUR-Paket bibata-cursor-theme-bin. Fehlt es (z.B. weil die
+# Paketinstallation uebersprungen wurde oder fehlschlug), zeigt Hyprland nur den
+# Standard-Cursor.
+CURSOR_THEME="Bibata-Modern-Classic"
+if [ -d "/usr/share/icons/$CURSOR_THEME" ] || [ -d "$HOME/.local/share/icons/$CURSOR_THEME" ]; then
+    if [ "$HYPR_LIVE" -eq 1 ]; then
+        hyprctl setcursor "$CURSOR_THEME" 24 >/dev/null 2>&1 || true
+        echo "==> Cursor $CURSOR_THEME aktiviert"
+    fi
+else
+    echo "    Warnung: Cursor-Theme $CURSOR_THEME ist nicht installiert." >&2
+    echo "    Nachinstallieren: paru -S bibata-cursor-theme-bin  (danach neu anmelden)" >&2
 fi
 
 if [ -f "$SRC/dconf.ini" ]; then

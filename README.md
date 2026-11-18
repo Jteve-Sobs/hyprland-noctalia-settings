@@ -28,7 +28,8 @@ Im Archiv gesichert:
   (wird beim Autostart mit `hypr-persist restore startup` geladen)
 - **Umgebung und Theming:** `~/.config/uwsm`, `qt5ct`, `qt6ct`, `gtk-3.0`,
   `gtk-4.0`, `kcminputrc`, Standard-Cursor
-- **Shell und Terminal:** `fish`, `kitty`, `hyfetch`/`fastfetch`
+- **Shell und Terminal:** `fish`, `alacritty`, `kitty`, `hyfetch`/`fastfetch`,
+  `xdg-terminals.list` (Standard-Terminal, z.B. für den arch-update-Tray)
 - **Standard-Apps:** `mimeapps.list`, `makemkv.desktop`
 
 Nicht gesichert werden Cache, Verläufe (Zwischenablage, Benachrichtigungen),
@@ -60,10 +61,12 @@ Am besten aus einem Terminal **innerhalb einer laufenden Hyprland-Sitzung**:
 ./restore.sh
 ```
 
-Das Skript fragt jeden größeren Schritt einzeln ab (`j` = ja, Enter = nein):
+Das Skript fragt jeden größeren Schritt einzeln ab. Bei Mirrors und Paketen
+ist Ja voreingestellt (`[J/n]`, Enter = ja), bei allen anderen Schritten Nein
+(`[j/N]`, Enter = nein):
 
 0. **Mirrors:** Zuerst bewertet `sudo cachyos-rate-mirrors` die Paket-Mirrors
-   neu (ohne Rückfrage). Auf frischen Systemen stehen sonst oft veraltete
+   neu. Auf frischen Systemen stehen sonst oft veraltete
    Mirrors oben, und pacman scheitert mit 404-Fehlern.
 1. **Pakete:** Zuerst aktualisiert `sudo pacman -Syu` die Paketdatenbanken und
    das System. Danach werden fehlende Repo-Pakete mit `pacman` installiert, AUR-Pakete

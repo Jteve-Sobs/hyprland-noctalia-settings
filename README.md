@@ -62,7 +62,11 @@ Am besten aus einem Terminal **innerhalb einer laufenden Hyprland-Sitzung**:
 
 Das Skript fragt jeden größeren Schritt einzeln ab (`j` = ja, Enter = nein):
 
-1. **Pakete:** Fehlende Repo-Pakete werden mit `pacman` installiert, AUR-Pakete
+0. **Mirrors:** Zuerst bewertet `sudo cachyos-rate-mirrors` die Paket-Mirrors
+   neu (ohne Rückfrage). Auf frischen Systemen stehen sonst oft veraltete
+   Mirrors oben, und pacman scheitert mit 404-Fehlern.
+1. **Pakete:** Zuerst aktualisiert `sudo pacman -Syu` die Paketdatenbanken und
+   das System. Danach werden fehlende Repo-Pakete mit `pacman` installiert, AUR-Pakete
    mit `paru` (oder `yay`). Pakete, die es in den Repos nicht mehr gibt, werden
    übersprungen.
 2. **Monitore:** Zeigt die gesicherte `monitors.lua` und die Anschlüsse des

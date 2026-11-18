@@ -27,6 +27,16 @@ ask() {
 # die ganze Installation abzubrechen.
 install_pkgs() {
     local repo="$SRC/pkglist-repo.txt" aur="$SRC/pkglist-aur.txt"
+    # Erst Paketdatenbanken holen und System aktualisieren. Ohne -y kennt
+    # pacman nur die alten Versionen, die auf den Mirrors schon geloescht sind
+    # (404 auf allen Mirrors). Nur -Sy ohne -u wuerde ein Teil-Update erzeugen,
+    # das auf Arch nicht unterstuetzt ist -- daher immer -Syu.
+    echo "==> Aktualisiere Paketdatenbanken und System (pacman -Syu)"
+    if ! sudo pacman -Syu; then
+        echo "    Fehler: Systemupdate fehlgeschlagen, Pakete werden nicht installiert." >&2
+        echo "    Mirrors pruefen (sudo cachyos-rate-mirrors) und restore.sh erneut starten." >&2
+        return 0
+    fi
     if [ -s "$repo" ]; then
         local missing
         missing=$(comm -12 <(sort -u "$repo") <(pacman -Slq | sort -u) | comm -23 - <(pacman -Qq | sort -u))
@@ -114,6 +124,17 @@ enable_units() {
         sudo systemctl enable "${todo[@]}"
     fi
 }
+
+# Mirrorlisten zuerst neu bewerten: Auf frischen Systemen stehen oft veraltete
+# oder kaputte Mirrors oben (404 auf .sig-Dateien), dann scheitert jede
+# Paketinstallation.
+if command -v cachyos-rate-mirrors >/dev/null; then
+    echo "==> Bewerte Mirrors neu (cachyos-rate-mirrors)"
+    sudo cachyos-rate-mirrors \
+        || echo "    Warnung: cachyos-rate-mirrors fehlgeschlagen, fahre mit bestehenden Mirrors fort." >&2
+else
+    echo "    cachyos-rate-mirrors nicht gefunden, Mirrors bleiben unveraendert."
+fi
 
 if [ -s "$SRC/pkglist-repo.txt" ] || [ -s "$SRC/pkglist-aur.txt" ]; then
     ask "Fehlende Pakete aus den Paketlisten installieren?" && install_pkgs

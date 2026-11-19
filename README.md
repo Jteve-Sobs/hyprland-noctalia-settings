@@ -10,6 +10,7 @@ neues System mit wenigen Befehlen genauso einrichten lässt.
 | `hypr-noctalia-config.tar.gz` | Konfigurationsdateien relativ zu `$HOME` (Liste siehe unten) |
 | `pkglist-repo.txt` | Explizit installierte Repo-Pakete (`pacman -Qqen`) |
 | `pkglist-aur.txt` | Explizit installierte AUR-/Fremdpakete (`pacman -Qqem`) |
+| `pkglist-optional.txt` | Hardwareabhängige Paketgruppen (NVIDIA, Intel, tlp, VM …), nur nach Rückfrage. Von Hand gepflegt |
 | `flatpaks.txt` | Flatpak-Apps: App-ID, Remote, Installation (system/user) |
 | `services-system.txt` | Aktivierte systemd-Units (System) |
 | `services-user.txt` | Aktivierte systemd-Units (Benutzer) |
@@ -68,10 +69,13 @@ ist Ja voreingestellt (`[J/n]`, Enter = ja), bei allen anderen Schritten Nein
 0. **Mirrors:** Zuerst bewertet `sudo cachyos-rate-mirrors` die Paket-Mirrors
    neu. Auf frischen Systemen stehen sonst oft veraltete
    Mirrors oben, und pacman scheitert mit 404-Fehlern.
-1. **Pakete:** Zuerst aktualisiert `sudo pacman -Syu` die Paketdatenbanken und
-   das System. Danach werden fehlende Repo-Pakete mit `pacman` installiert, AUR-Pakete
-   mit `paru` (oder `yay`). Pakete, die es in den Repos nicht mehr gibt, werden
-   übersprungen.
+1. **Pakete:** Zuerst fragt das Skript jede Gruppe aus `pkglist-optional.txt`
+   einzeln ab (`[j/N]`) und zeigt dabei, ob die Hardware auf diesem Rechner
+   erkannt wurde. Danach aktualisiert `sudo pacman -Syu` die Paketdatenbanken
+   und das System. Anschließend werden fehlende Repo-Pakete mit `pacman`
+   installiert, AUR-Pakete mit `paru` (oder `yay`). Optionale Pakete kommen nur
+   mit, wenn ihre Gruppe ausgewählt wurde. Pakete, die es in den Repos nicht
+   mehr gibt, werden übersprungen.
 2. **Monitore:** Zeigt die gesicherte `monitors.lua` und die Anschlüsse des
    neuen Rechners. Nur übernehmen, wenn Monitore und Anschlüsse gleich sind.
    Sonst bleibt eine vorhandene `monitors.lua` erhalten, oder es wird eine
@@ -81,15 +85,17 @@ ist Ja voreingestellt (`[J/n]`, Enter = ja), bei allen anderen Schritten Nein
 4. **Config einspielen:** Entpackt das Archiv nach `$HOME`. Der Hyprland-
    Autoreload ist währenddessen pausiert. Danach wird einmal neu geladen und
    `hyprctl configerrors` geprüft.
+   Noctalia-Widgets (Sperrbildschirm-Uhr, Desktop-Widgets), deren Monitor es
+   auf diesem Rechner nicht gibt, werden auf den ersten Monitor verschoben.
+   Sonst wären sie unsichtbar, z.B. in einer VM ohne `eDP-1`.
 5. **dconf:** Lädt `dconf.ini`.
 6. **Flatpaks:** Installiert die Apps aus `flatpaks.txt`. Flathub wird bei
    Bedarf angelegt, andere Remotes müssen schon eingerichtet sein.
 7. **Dienste:** Aktiviert die gesicherten Units nur mit `enable`, sie starten
    also erst beim nächsten Boot oder Login.
 
-> **Achtung:** Die Dienstlisten enthalten hardwareabhängige Units (z.B.
-> `nvidia-*`, `tlp`). Auf anderer Hardware die Listen vorher prüfen oder
-> diesen Schritt überspringen.
+   Dienste aus optionalen Gruppen (z.B. `nvidia-*`, `tlp`) werden nur
+   aktiviert, wenn ihre Gruppe beim Paketschritt ausgewählt wurde.
 
 ### 4. Danach
 
@@ -114,6 +120,10 @@ git add -A && git commit -m "Neue Sicherung" && git push
 
 `backup.sh` erzeugt das Archiv, die Paket-, Dienst- und Flatpak-Listen sowie
 `dconf.ini` neu und listet am Ende alle gesicherten Pfade auf.
+
+`pkglist-optional.txt` ändert `backup.sh` nicht. Kommt auf dem Laptop ein
+neues hardwareabhängiges Paket dazu, trägt man es dort von Hand in die passende
+Gruppe ein (oder legt mit `[name] Beschreibung` eine neue Gruppe an).
 
 Neue Pfade fügt man in `backup.sh` im Array `CONFIG_PATHS` hinzu. `restore.sh`
 muss dafür nicht angepasst werden, weil es die Dateiliste direkt aus dem

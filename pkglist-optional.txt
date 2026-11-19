@@ -1,0 +1,47 @@
+# Optionale Paketgruppen fuer restore.sh (opt-in, Standard: nein).
+#
+# Pakete und Dienste aus dieser Datei werden beim Restore NICHT automatisch
+# installiert bzw. aktiviert, auch wenn sie in pkglist-*.txt oder
+# services-*.txt stehen. Fuer jede Gruppe fragt restore.sh einzeln nach.
+#
+# Diese Datei wird von Hand gepflegt, backup.sh aendert sie nicht.
+#
+# Format:
+#   [gruppe] Beschreibung   neue Gruppe
+#   detect: <befehl>        Erkennung, ob die Gruppe zu diesem Rechner passt
+#                           (Exit-Code 0 = ja). Nur ein Hinweis bei der Frage.
+#   service: <unit> ...     System-Units, die nur bei Auswahl aktiviert werden
+#   <paket> ...             Paketnamen (Repo oder AUR), mehrere pro Zeile erlaubt
+
+[nvidia] NVIDIA-Treiber (proprietaer, 580xx)
+detect: lspci 2>/dev/null | grep -qi nvidia
+nvidia-580xx-dkms nvidia-580xx-utils nvidia-580xx-settings
+opencl-nvidia-580xx lib32-nvidia-580xx-utils lib32-opencl-nvidia-580xx
+libva-nvidia-driver nvidia-prime
+service: nvidia-suspend.service nvidia-resume.service nvidia-hibernate.service
+
+[intel] Intel-CPU-Microcode und Intel-Grafik
+detect: grep -q GenuineIntel /proc/cpuinfo
+intel-ucode intel-media-driver intel-media-sdk vulkan-intel lib32-vulkan-intel
+
+[hybrid-gpu] Umschalten zwischen zwei GPUs (switcheroo-control)
+detect: [ "$(lspci 2>/dev/null | grep -cE 'VGA|3D controller')" -ge 2 ]
+switcheroo-control
+service: switcheroo-control.service
+
+[akku] Akku-Tuning fuer Laptops (tlp, powertop), vertraegt sich nicht mit power-profiles-daemon
+detect: ls /sys/class/power_supply/BAT* >/dev/null 2>&1
+tlp powertop
+service: tlp.service
+
+[laptop] Laptop-Sound und Bildschirmhelligkeit (sof-firmware, brightnessctl)
+detect: ls /sys/class/backlight/* >/dev/null 2>&1
+sof-firmware brightnessctl
+
+[logitech] Logitech-Empfaenger (solaar)
+detect: grep -qx 046d /sys/bus/usb/devices/*/idVendor 2>/dev/null
+solaar
+
+[vm] Gast-Werkzeuge fuer VMs (spice-vdagent)
+detect: systemd-detect-virt -q
+spice-vdagent

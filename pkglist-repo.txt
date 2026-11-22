@@ -145,6 +145,7 @@ libdvdcss
 libgsf
 libopenraw
 libreoffice-fresh
+librewolf
 libva-nvidia-driver
 linux-cachyos
 linux-cachyos-headers

@@ -3,6 +3,7 @@ cups.path
 ananicy-cpp.service
 avahi-daemon.service
 bluetooth.service
+bpftune.service
 cups.service
 docker.service
 NetworkManager-dispatcher.service
@@ -14,12 +15,14 @@ nvidia-suspend.service
 plasmalogin.service
 smb.service
 switcheroo-control.service
+systemd-oomd.service
 systemd-resolved.service
 systemd-timesyncd.service
 tlp.service
 ufw.service
 avahi-daemon.socket
 cups.socket
+systemd-oomd.socket
 systemd-resolved-monitor.socket
 systemd-resolved-varlink.socket
 systemd-userdbd.socket

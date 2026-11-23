@@ -17,11 +17,13 @@ bluez-hid2hci
 bluez-libs
 bluez-obex
 bluez-utils
+bpftune-gaming
 breeze-gtk
 brightnessctl
 btop
 btrfs-progs
 cachy-update
+cachyos-drm-awaiter
 cachyos-emerald-kde-theme-git
 cachyos-fish-config
 cachyos-hello
@@ -37,6 +39,7 @@ cachyos-packageinstaller
 cachyos-plymouth-bootanimation
 cachyos-plymouth-theme
 cachyos-rate-mirrors
+cachyos-recovery
 cachyos-settings
 cachyos-v3-mirrorlist
 cachyos-v4-mirrorlist
@@ -89,6 +92,7 @@ foomatic-db-ppds
 fsarchiver
 fwupd
 ghostscript
+ghostty-terminfo
 gimp
 git
 github-cli
@@ -100,11 +104,13 @@ gnome-text-editor
 grim
 gsfonts
 gst-libav
+gst-plugin-dav1d
 gst-plugin-pipewire
 gst-plugin-va
 gst-plugins-bad
 gst-plugins-ugly
 gutenprint
+gvfs-mtp
 gwenview
 haruna
 hdparm
@@ -130,6 +136,7 @@ kdialog
 kinfocenter
 kio-admin
 kitty
+kmscon-terminfo
 konsole
 kscreen
 kwallet-pam
@@ -152,6 +159,8 @@ linux-cachyos-headers
 linux-cachyos-lts
 linux-cachyos-lts-headers
 linux-firmware
+linux-firmware-intel
+llvm-bolt
 localsend
 logrotate
 lsb-release
@@ -233,6 +242,7 @@ sane
 sane-airscan
 sg3_utils
 shelly
+shelly-flatpak-backend
 slurp
 smartmontools
 sof-firmware
